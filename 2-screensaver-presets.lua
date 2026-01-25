@@ -141,51 +141,30 @@ local screensaver_preset_obj = {
 }
 
 
-local orig_FileManagerMenu_init = FileManagerMenu.init
+local function initPresets(Menu, MenuOrder) 
+	local orig_Menu_init = Menu.init
+	function Menu:init()
+		orig_Menu_init(self)
+		
+		self.preset_obj = screensaver_preset_obj
+		self:onDispatcherRegisterActions()
+	end
 
-function FileManagerMenu:onDispatcherRegisterActions()
-	register_action()
+	function Menu:onDispatcherRegisterActions()
+		register_action()
+	end
+
+	function Menu:onLoadScreensaverPreset(preset_name)
+		return Presets.onLoadPreset(self.preset_obj, preset_name, true)
+	end
+
+	local orig_Menu_setUpdateItemTable = Menu.setUpdateItemTable
+
+	Menu.setUpdateItemTable = function(self)
+		orig_Menu_setUpdateItemTable(self)
+		add_options_in_screensaver(MenuOrder, self, "reader")
+	end
 end
 
-function FileManagerMenu:init()
-	orig_FileManagerMenu_init(self)
-	
-	self.preset_obj = screensaver_preset_obj
-	self:onDispatcherRegisterActions()
-end
-
-function FileManagerMenu:onLoadScreensaverPreset(preset_name)
-	return Presets.onLoadPreset(self.preset_obj, preset_name, true)
-end
-
-local orig_FileManagerMenu_setUpdateItemTable = FileManagerMenu.setUpdateItemTable
-
-FileManagerMenu.setUpdateItemTable = function(self)
-    orig_FileManagerMenu_setUpdateItemTable(self)
-    add_options_in_screensaver(FileManagerMenuOrder, self, "file manager")
-end
-
-
-local orig_ReaderMenu_init = ReaderMenu.init
-
-function ReaderMenu:onDispatcherRegisterActions()
-	register_action()
-end
-
-function ReaderMenu:init()
-	orig_ReaderMenu_init(self)
-	
-	self.preset_obj = screensaver_preset_obj
-	self:onDispatcherRegisterActions()
-end
-
-function ReaderMenu:onLoadScreensaverPreset(preset_name)
-	return Presets.onLoadPreset(self.preset_obj, preset_name, true)
-end
-
-local orig_ReaderMenu_setUpdateItemTable = ReaderMenu.setUpdateItemTable
-
-ReaderMenu.setUpdateItemTable = function(self)
-    orig_ReaderMenu_setUpdateItemTable(self)
-    add_options_in_screensaver(ReaderMenuOrder, self, "reader")
-end
+initPresets(ReaderMenu, ReaderMenuOrder)
+initPresets(FileManagerMenu, FileManagerMenuOrder)
