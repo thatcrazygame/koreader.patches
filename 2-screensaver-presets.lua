@@ -27,6 +27,23 @@ local util = require("util")
 local _ = require("gettext")
 
 local logger = require("logger")
+
+-- default values
+if G_reader_settings:hasNot("screensaver_close_widgets_when_no_fill") then
+    G_reader_settings:saveSetting("screensaver_close_widgets_when_no_fill", false)
+end
+
+if G_reader_settings:hasNot("screensaver_center_image") then
+    G_reader_settings:saveSetting("screensaver_center_image", false)
+end
+
+if G_reader_settings:hasNot("screensaver_overlap_message") then
+    G_reader_settings:saveSetting("screensaver_overlap_message", true)
+end
+
+if G_reader_settings:hasNot("screensaver_invert_message_color") then
+    G_reader_settings:saveSetting("screensaver_invert_message_color", false)
+end
     
 local function find_item_from_path(menu, ...)
     local function find_sub_item(sub_items, text)
