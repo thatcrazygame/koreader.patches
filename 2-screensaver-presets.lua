@@ -27,14 +27,31 @@ local util = require("util")
 local _ = require("gettext")
 
 local logger = require("logger")
-    
+
+-- default values
+if G_reader_settings:hasNot("screensaver_close_widgets_when_no_fill") then
+    G_reader_settings:saveSetting("screensaver_close_widgets_when_no_fill", false)
+end
+if G_reader_settings:hasNot("screensaver_center_image") then
+    G_reader_settings:saveSetting("screensaver_center_image", false)
+end
+if G_reader_settings:hasNot("screensaver_overlap_message") then
+    G_reader_settings:saveSetting("screensaver_overlap_message", true)
+end
+if G_reader_settings:hasNot("screensaver_invert_message_color") then
+    G_reader_settings:saveSetting("screensaver_invert_message_color", false)
+end
+if G_reader_settings:hasNot("screensaver_box_message_show_icon") then
+    G_reader_settings:saveSetting("screensaver_box_message_show_icon", true)
+end
+
 local function find_item_from_path(menu, ...)
     local function find_sub_item(sub_items, text)
-        -- logger.info("search item", text)
+        -- logger.dbg("search item", text)
         for _, item in ipairs(sub_items) do
             local item_text = item.text or (item.text_func and item.text_func())
             if item_text and item_text == text then
-                -- logger.info("Found item", item_text)
+                -- logger.dbg("Found item", item_text)
                 return item
             end
         end
@@ -50,8 +67,8 @@ local function find_item_from_path(menu, ...)
     return item
 end
 
-local function add_options_in(self, menu)
-    local items = menu.sub_item_table
+local function add_options_in(menu, sub_menu)
+    local items = sub_menu.sub_item_table
 	items[#items].separator = true
     table.insert(items, {
         text = _("Close widgets before showing the screensaver"),
@@ -124,9 +141,28 @@ local function add_options_in(self, menu)
         text = _("Sleep screen presets"),
         separator = true,
         sub_item_table_func = function()
-            return Presets.genPresetMenuItemTable(self.preset_obj, nil, nil)
+            return Presets.genPresetMenuItemTable(menu.preset_obj, nil, nil)
         end,
     })
+	
+	local message_container_menu = find_item_from_path(items, _("Sleep screen message"), _("Container and position"))
+	local container_items = message_container_menu.sub_item_table
+	local prefix = Screensaver.prefix or ""
+	table.insert(container_items, {
+        text = _("Show icon"),
+        help_text = _("This option will only become available, if you have selected Box as the container."),
+        enabled_func = function()
+            local message_container = G_reader_settings:readSetting(prefix .. "screensaver_message_container")
+		        or G_reader_settings:readSetting("screensaver_message_container")
+            return message_container == "box" 
+        end,
+        checked_func = function() return G_reader_settings:isTrue("screensaver_box_message_show_icon") end,
+        callback = function(touchmenu_instance)
+            G_reader_settings:flipNilOrFalse("screensaver_box_message_show_icon")
+            touchmenu_instance:updateItems()
+        end,
+    })
+	
 end
 
 local function add_options_in_screensaver(order, menu, menu_name)
@@ -145,7 +181,6 @@ local function add_options_in_screensaver(order, menu, menu_name)
         end
     end
 end
-
 
 local function buildPreset()
 	local screensaver_message = Screensaver.default_screensaver_message
@@ -177,7 +212,8 @@ local function buildPreset()
 		close_widgets = G_reader_settings:readSetting("screensaver_close_widgets_when_no_fill"),
 		center_image = G_reader_settings:readSetting("screensaver_center_image"),
 		overlap_message = G_reader_settings:readSetting("screensaver_overlap_message"),
-		invert_message_color = G_reader_settings:readSetting("screensaver_invert_message_color")
+		invert_message_color = G_reader_settings:readSetting("screensaver_invert_message_color"),
+		show_icon = G_reader_settings:readSetting("screensaver_box_message_show_icon"),
 	}
 end
 
@@ -200,6 +236,7 @@ local function loadPreset(preset)
 	 if preset.center_image ~= nil then G_reader_settings:saveSetting("screensaver_center_image", preset.center_image) end
 	 if preset.overlap_message ~= nil then G_reader_settings:saveSetting("screensaver_overlap_message", preset.overlap_message) end
 	 if preset.invert_message_color ~= nil then G_reader_settings:saveSetting("screensaver_invert_message_color", preset.invert_message_color) end
+	 if preset.show_icon ~= nil then G_reader_settings:saveSetting("screensaver_box_message_show_icon", preset.show_icon) end
 end
 
 local function getPresets()
@@ -244,7 +281,6 @@ local function initPresetsAndMenus(Menu, MenuOrder)
 		add_options_in_screensaver(MenuOrder, self, "reader")
 	end
 end
-
 
 local userpatch = require("userpatch")
 local addOverlayMessage = userpatch.getUpValue(Screensaver.show, "addOverlayMessage")
@@ -407,12 +443,15 @@ Screensaver.show = function(self)
 
         local message_widget, content_widget
         if message_container == "box" then
+			local show_icon = G_reader_settings:isTrue("screensaver_box_message_show_icon")
             content_widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
                 dismissable = false,
                 force_one_line = true,
                 alpha = false,
+                show_icon = show_icon,
+                alignment = show_icon and "left" or "center"
             }
             content_widget = content_widget.movable
             
