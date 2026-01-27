@@ -412,8 +412,26 @@ Screensaver.show = function(self)
                 readonly = true,
                 dismissable = false,
                 force_one_line = true,
+                alpha = false,
             }
             content_widget = content_widget.movable
+            
+            local frame = content_widget[1]
+            frame.color = fgcolor
+            frame.background = bgcolor
+            
+            local hgroup = frame[1]
+            
+            local icon = hgroup[1]
+            if bgcolor == Blitbuffer.COLOR_BLACK then
+                icon.invert = true
+            end
+            
+            local textbox = hgroup[3]
+            textbox.fgcolor = fgcolor
+            textbox.bgcolor = bgcolor
+            textbox:update(true)
+            
         elseif message_container == "banner" then
             local face = Font:getFace("infofont")
             content_widget = TextBoxWidget:new{
