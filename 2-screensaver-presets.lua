@@ -27,6 +27,7 @@ local util = require("util")
 local _ = require("gettext")
 
 local logger = require("logger")
+local T = ffiUtil.template
 
 -- default values
 if G_reader_settings:hasNot("screensaver_close_widgets_when_no_fill") then
@@ -43,6 +44,9 @@ if G_reader_settings:hasNot("screensaver_invert_message_color") then
 end
 if G_reader_settings:hasNot("screensaver_box_message_show_icon") then
     G_reader_settings:saveSetting("screensaver_box_message_show_icon", true)
+end
+if G_reader_settings:hasNot("screensaver_message_color_behavior") then
+    G_reader_settings:saveSetting("screensaver_message_color_behavior", "night_mode")
 end
 
 local function find_item_from_path(menu, ...)
@@ -80,19 +84,6 @@ local function add_options_in(menu, sub_menu)
             touchmenu_instance:updateItems()
         end,
     })
-    -- table.insert(items, {
-        -- text = _("Refresh before showing the screensaver"),
-        -- help_text = _("This option will only become available, if you have selected a cover or a random image."),
-        -- enabled_func = function()
-            -- local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-            -- return Device:hasEinkScreen() and (screensaver_type == "cover" or screensaver_type == "random_image")
-        -- end,
-        -- checked_func = function() return G_reader_settings:isTrue("screensaver_refresh") end,
-        -- callback = function(touchmenu_instance)
-            -- G_reader_settings:toggle("screensaver_refresh")
-            -- touchmenu_instance:updateItems()
-        -- end,
-    -- })
     table.insert(items, {
         text = _("Message do not overlap image"),
         help_text = _(
@@ -127,15 +118,6 @@ local function add_options_in(menu, sub_menu)
             touchmenu_instance:updateItems()
         end,
     })
-    table.insert(items, {
-        text = _("Invert message color when no fill"),
-        -- help_text = _("When the This option will only become available, if you have selected 'Message do not overlap image'."),
-        checked_func = function() return G_reader_settings:isTrue("screensaver_invert_message_color") end,
-        callback = function(touchmenu_instance)
-            G_reader_settings:flipNilOrFalse("screensaver_invert_message_color")
-            touchmenu_instance:updateItems()
-        end,
-    })
     items[#items].separator = true
 	table.insert(items, {
         text = _("Sleep screen presets"),
@@ -146,8 +128,48 @@ local function add_options_in(menu, sub_menu)
     })
 	
 	local message_container_menu = find_item_from_path(items, _("Sleep screen message"), _("Container and position"))
+	message_container_menu.text = _("Container, position, and color")
+	
 	local container_items = message_container_menu.sub_item_table
 	local prefix = Screensaver.prefix or ""
+	table.insert(container_items, {
+	    text = _("Color"),
+	    sub_item_table = {
+            {
+                text = _("Follow night mode (default)"),
+                help_text = _("White text on black when night mode is on. Black text on white when off."),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_message_color_behavior") == "night_mode" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_message_color_behavior", "night_mode")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+            },
+	        {
+                text_func = function()
+                    local screensaver_background = G_reader_settings:readSetting("screensaver_img_background")
+                    return T(_("Follow wallpaper background fill (%1)"), screensaver_background)
+                end,
+                help_text = _("White text on black when background fill is black. Black text on white when background fill is white or no fill."),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_message_color_behavior") == "wallpaper" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_message_color_behavior", "wallpaper")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+                separator = true,
+            },
+            {
+                text = _("Invert"),
+                help_text = _("After applying the colors based on night mode or the background fill, invert them."),
+                checked_func = function() return G_reader_settings:isTrue("screensaver_invert_message_color") end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:toggle("screensaver_invert_message_color")
+                    touchmenu_instance:updateItems()
+                end,
+            }
+	    }
+	})
 	table.insert(container_items, {
         text = _("Show icon"),
         help_text = _("This option will only become available, if you have selected Box as the container."),
@@ -158,11 +180,10 @@ local function add_options_in(menu, sub_menu)
         end,
         checked_func = function() return G_reader_settings:isTrue("screensaver_box_message_show_icon") end,
         callback = function(touchmenu_instance)
-            G_reader_settings:flipNilOrFalse("screensaver_box_message_show_icon")
+            G_reader_settings:toggle("screensaver_box_message_show_icon")
             touchmenu_instance:updateItems()
         end,
     })
-	
 end
 
 local function add_options_in_screensaver(order, menu, menu_name)
@@ -212,8 +233,9 @@ local function buildPreset()
 		close_widgets = G_reader_settings:readSetting("screensaver_close_widgets_when_no_fill"),
 		center_image = G_reader_settings:readSetting("screensaver_center_image"),
 		overlap_message = G_reader_settings:readSetting("screensaver_overlap_message"),
-		invert_message_color = G_reader_settings:readSetting("screensaver_invert_message_color"),
+        invert_message_color = G_reader_settings:readSetting("screensaver_invert_message_color"),
 		show_icon = G_reader_settings:readSetting("screensaver_box_message_show_icon"),
+		message_color_behavior = G_reader_settings:readSetting("screensaver_message_color_behavior")
 	}
 end
 
@@ -237,6 +259,7 @@ local function loadPreset(preset)
 	 if preset.overlap_message ~= nil then G_reader_settings:saveSetting("screensaver_overlap_message", preset.overlap_message) end
 	 if preset.invert_message_color ~= nil then G_reader_settings:saveSetting("screensaver_invert_message_color", preset.invert_message_color) end
 	 if preset.show_icon ~= nil then G_reader_settings:saveSetting("screensaver_box_message_show_icon", preset.show_icon) end
+	 if preset.message_color_behavior ~= nil then G_reader_settings:saveSetting("screensaver_message_color_behavior", preset.message_color_behavior) end
 end
 
 local function getPresets()
@@ -391,20 +414,23 @@ Screensaver.show = function(self)
     -- Speaking of, set that background fill up...
     local background
     local fgcolor, bgcolor = Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_WHITE
+    local color_behavior = G_reader_settings:readSetting("screensaver_message_color_behavior")
     if self.screensaver_background == "black" then
         background = Blitbuffer.COLOR_BLACK
-        bgcolor = background -- text follow the same color scheme
-        fgcolor = Blitbuffer.COLOR_WHITE
+        if color_behavior == "wallpaper" then
+            bgcolor = background
+            fgcolor = Blitbuffer.COLOR_WHITE            
+        end
     elseif self.screensaver_background == "white" then
         background = Blitbuffer.COLOR_WHITE
     elseif self.screensaver_background == "none" then
         background = nil
-        if G_reader_settings:isTrue("screensaver_invert_message_color") then
-            fgcolor, bgcolor = bgcolor, fgcolor
-        end
     end
-
-    if G_reader_settings:isTrue("night_mode") then
+    
+    if color_behavior == "wallpaper" and G_reader_settings:isTrue("night_mode") then
+        fgcolor, bgcolor = bgcolor, fgcolor
+    end
+    if G_reader_settings:isTrue("screensaver_invert_message_color") then
         fgcolor, bgcolor = bgcolor, fgcolor
     end
 
