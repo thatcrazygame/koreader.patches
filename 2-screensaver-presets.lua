@@ -3,10 +3,12 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local CustomPositionContainer = require("ui/widget/container/custompositioncontainer")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local DocumentRegistry = require("document/documentregistry")
 local ffiUtil = require("ffi/util")
 local Font = require("ui/font")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerMenuOrder = require("ui/elements/filemanager_menu_order")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -19,10 +21,13 @@ local Screen = Device.screen
 local Screensaver = require("ui/screensaver")
 local ScreenSaverLockWidget = require("ui/widget/screensaverlockwidget")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
+local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local time = require("ui/time")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local userpatch = require("userpatch")
 local util = require("util")
 local _ = require("gettext")
 
@@ -48,6 +53,13 @@ end
 if G_reader_settings:hasNot("screensaver_message_color_behavior") then
     G_reader_settings:saveSetting("screensaver_message_color_behavior", "night_mode")
 end
+if G_reader_settings:hasNot("screensaver_change_wallpaper_units") then
+    G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "always")
+end
+if G_reader_settings:hasNot("screensaver_change_wallpaper_num") then
+    G_reader_settings:saveSetting("screensaver_change_wallpaper_num", 1)
+end
+
 
 local function find_item_from_path(menu, ...)
     local function find_sub_item(sub_items, text)
@@ -72,6 +84,7 @@ local function find_item_from_path(menu, ...)
 end
 
 local function add_options_in(menu, sub_menu)
+	local prefix = Screensaver.prefix or ""
     local items = sub_menu.sub_item_table
 	items[#items].separator = true
     table.insert(items, {
@@ -129,9 +142,7 @@ local function add_options_in(menu, sub_menu)
 	
 	local message_container_menu = find_item_from_path(items, _("Sleep screen message"), _("Container and position"))
 	message_container_menu.text = _("Container, position, and color")
-	
 	local container_items = message_container_menu.sub_item_table
-	local prefix = Screensaver.prefix or ""
 	table.insert(container_items, {
 	    text = _("Color"),
 	    sub_item_table = {
@@ -184,6 +195,86 @@ local function add_options_in(menu, sub_menu)
             touchmenu_instance:updateItems()
         end,
     })
+	
+	local custom_images_menu = find_item_from_path(items, _("Wallpaper"), _("Custom images"))
+	local images_items = custom_images_menu.sub_item_table
+	table.insert(images_items, {
+		text_func = function() 
+			local units = G_reader_settings:readSetting("screensaver_change_wallpaper_units")
+			local num = G_reader_settings:readSetting("screensaver_change_wallpaper_num")
+			if units == "always" then
+				return _("Update: Always")
+			else
+				return T(_("Update: Every %1 %2%3"), num, units, num ~= 1 and "s" or "")
+			end
+		end,
+		help_text = _("This option is only available if you have selected 'Show random image from folder'"),
+		enabled_func = function() return G_reader_settings:readSetting("screensaver_type") == "random_image" end,
+		sub_item_table = {
+            {
+                text = _("Always"),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "always" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "always")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+            },
+            {
+                text = _("Every n minutes"),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "minute" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "minute")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+            },
+            {
+                text = _("Every n hours"),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "hour" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "hour")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+            },
+            {
+                text = _("Every n days"),
+                checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "day" end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "day")
+                    touchmenu_instance:updateItems()
+                end,
+                radio = true,
+                separator = true,
+            },
+			{
+				text_func = function() return T(_("Number of units: %1"), G_reader_settings:readSetting("screensaver_change_wallpaper_num")) end,
+				help_text = _("Only enabled if you have selected an update interval other than 'Always'"),
+				enabled_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") ~= "always" end,
+				callback = function(touchmenu_instance)
+					local units = G_reader_settings:readSetting("screensaver_change_wallpaper_units")
+					local num = G_reader_settings:readSetting("screensaver_change_wallpaper_num")
+					local spin_widget = SpinWidget:new {
+						title_text = _("Number of units"),
+						default_value = 1,
+						value = num,
+						value_min = 1,
+						value_step = 1,
+						value_hold_step = 10,
+						value_max = 500,
+						unit = _(units .."(s)"),
+						callback = function(spin)
+							G_reader_settings:saveSetting("screensaver_change_wallpaper_num", spin.value)
+							touchmenu_instance:updateItems()
+						end,
+					}
+					UIManager:show(spin_widget)
+				end,
+			}
+		}
+	})
+	
 end
 
 local function add_options_in_screensaver(order, menu, menu_name)
@@ -235,7 +326,9 @@ local function buildPreset()
 		overlap_message = G_reader_settings:readSetting("screensaver_overlap_message"),
         invert_message_color = G_reader_settings:readSetting("screensaver_invert_message_color"),
 		show_icon = G_reader_settings:readSetting("screensaver_box_message_show_icon"),
-		message_color_behavior = G_reader_settings:readSetting("screensaver_message_color_behavior")
+		message_color_behavior = G_reader_settings:readSetting("screensaver_message_color_behavior"),
+		change_wallpaper_units = G_reader_settings:readSetting("screensaver_change_wallpaper_units"),
+		change_wallpaper_num = G_reader_settings:readSetting("screensaver_change_wallpaper_num"),
 	}
 end
 
@@ -260,6 +353,8 @@ local function loadPreset(preset)
 	 if preset.invert_message_color ~= nil then G_reader_settings:saveSetting("screensaver_invert_message_color", preset.invert_message_color) end
 	 if preset.show_icon ~= nil then G_reader_settings:saveSetting("screensaver_box_message_show_icon", preset.show_icon) end
 	 if preset.message_color_behavior ~= nil then G_reader_settings:saveSetting("screensaver_message_color_behavior", preset.message_color_behavior) end
+	 if preset.change_wallpaper_units ~= nil then G_reader_settings:saveSetting("screensaver_change_wallpaper_units", preset.change_wallpaper_units) end
+	 if preset.change_wallpaper_num ~= nil then G_reader_settings:saveSetting("screensaver_change_wallpaper_num", preset.change_wallpaper_num) end
 end
 
 local function getPresets()
@@ -305,7 +400,49 @@ local function initPresetsAndMenus(Menu, MenuOrder)
 	end
 end
 
-local userpatch = require("userpatch")
+local orig_getRandomImage, up_value_idx = userpatch.getUpValue(Screensaver.setup, "_getRandomImage")
+
+local function _getRandomImage(dir)
+    local file
+    local last_cache_time
+	local now = time.now()
+    local cache_image_setting = "screensaver_cached_image_" .. dir
+    local last_cache_setting = "screensave_last_cache_time_" .. dir
+	local units = G_reader_settings:readSetting("screensaver_change_wallpaper_units")
+	
+	local function getRandomImageWithCache(dir)
+	    local f = orig_getRandomImage(dir)
+		G_reader_settings:saveSetting(cache_image_setting, f)
+		G_reader_settings:saveSetting(last_cache_setting, now)
+		return f
+    end
+	
+	if units ~= "always" then
+		local num = G_reader_settings:readSetting("screensaver_change_wallpaper_num")
+		local seconds = {
+			minute = 60,
+			hour = 3600,
+			day = 86400,
+		}
+		local interval_seconds = num * seconds[units]
+		
+		if G_reader_settings:has(cache_image_setting) and G_reader_settings:has(last_cache_setting) then
+			file = G_reader_settings:readSetting(cache_image_setting)
+			last_cache_time = G_reader_settings:readSetting(last_cache_setting)
+		end
+		
+		if last_cache_time == nil or time.to_s(now - last_cache_time) >= interval_seconds then
+			file = getRandomImageWithCache(dir)
+		end
+	else
+		file = getRandomImageWithCache(dir)
+	end
+
+	return file
+end
+
+userpatch.replaceUpValue(Screensaver.setup, up_value_idx, _getRandomImage)
+
 local addOverlayMessage = userpatch.getUpValue(Screensaver.show, "addOverlayMessage")
 
 Screensaver.show = function(self)
