@@ -205,7 +205,7 @@ local function add_options_in(menu, sub_menu)
 			if units == "always" then
 				return _("Update: Always")
 			else
-				return T(_("Update: Every %1 %2%3"), num, units, num ~= 1 and "s" or "")
+				return T(_("Update: After %1 %2%3"), num, units, num ~= 1 and "s" or "")
 			end
 		end,
 		help_text = _("This option is only available if you have selected 'Show random image from folder'"),
@@ -221,7 +221,7 @@ local function add_options_in(menu, sub_menu)
                 radio = true,
             },
             {
-                text = _("Every n minutes"),
+                text = _("After n minutes"),
                 checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "minute" end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "minute")
@@ -230,7 +230,7 @@ local function add_options_in(menu, sub_menu)
                 radio = true,
             },
             {
-                text = _("Every n hours"),
+                text = _("After n hours"),
                 checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "hour" end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "hour")
@@ -239,7 +239,7 @@ local function add_options_in(menu, sub_menu)
                 radio = true,
             },
             {
-                text = _("Every n days"),
+                text = _("After n days"),
                 checked_func = function() return G_reader_settings:readSetting("screensaver_change_wallpaper_units") == "day" end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting("screensaver_change_wallpaper_units", "day")

@@ -10,7 +10,7 @@ Plus new options under Screen 🞂 Sleep Screen  🞂
 - Wallpaper 🞂 Custom Images 🞂 Update 🞂
     - Caches the random image and only gets a new one if enough time has elapsed
     - Directory specific. Each directory has its own record of when the random image was last cached. Useful for presets.
-    - Always update (same as default random image behavior) or every n minutes/hours/days
+    - Always update (same as default random image behavior) or after n minutes/hours/days
 - Sleep screen message 🞂 Container, position, and color 🞂
   - Menu renamed from "Container and position"
   - Color 🞂
