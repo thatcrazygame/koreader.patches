@@ -193,7 +193,7 @@ local function addOptionsIn(menu, sub_menu)
             local screensaver_type = G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE)
             local message_pos = G_reader_settings:readSetting(NATIVE_SETTINGS.MESSAGE_VERTICAL_POSITION)
             return G_reader_settings:readSetting(NATIVE_SETTINGS.SHOW_MESSAGE)
-                and (screensaver_type == "cover" or screensaver_type == "random_image")
+                and (screensaver_type == "cover" or screensaver_type == "random_image" or screensaver_type == "document_cover")
                 and (message_pos == 100 or message_pos == 0)
         end,
         checked_func = function() return G_reader_settings:nilOrFalse(SETTINGS.OVERLAP_MESSAGE) end,
@@ -209,7 +209,7 @@ local function addOptionsIn(menu, sub_menu)
             local screensaver_type = G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE)
             local message_pos = G_reader_settings:readSetting(NATIVE_SETTINGS.MESSAGE_VERTICAL_POSITION)
             return G_reader_settings:nilOrFalse(SETTINGS.OVERLAP_MESSAGE)
-                and (screensaver_type == "cover" or screensaver_type == "random_image")
+                and (screensaver_type == "cover" or screensaver_type == "random_image" or screensaver_type == "document_cover")
                 and (message_pos == 100 or message_pos == 0)
         end,
         checked_func = function() return G_reader_settings:isTrue(SETTINGS.CENTER_IMAGE) end,
