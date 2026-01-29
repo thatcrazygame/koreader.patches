@@ -139,9 +139,7 @@ local function addOptionsIn(menu, sub_menu)
     })
     table.insert(items, {
         text = _("Message do not overlap image"),
-        help_text = _(
-            "This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."
-        ),
+        help_text = _( "This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."),
         enabled_func = function()
             local screensaver_type = G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE)
             local message_pos = G_reader_settings:readSetting(NATIVE_SETTINGS.MESSAGE_VERTICAL_POSITION)
@@ -175,9 +173,7 @@ local function addOptionsIn(menu, sub_menu)
     table.insert(items, {
         text = _("Sleep screen presets"),
         separator = true,
-        sub_item_table_func = function()
-            return Presets.genPresetMenuItemTable(menu.preset_obj, nil, nil)
-        end,
+        sub_item_table_func = function() return Presets.genPresetMenuItemTable(menu.preset_obj, nil, nil) end,
     })
 
     local message_container_menu = findItemFromPath(items, _("Sleep screen message"), _("Container and position"))
@@ -189,10 +185,7 @@ local function addOptionsIn(menu, sub_menu)
             {
                 text = _("Follow night mode"),
                 help_text = _("White text on black when night mode is on. Black text on white when off."),
-                checked_func = function()
-                    return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) ==
-                        COLOR_BEHAVIOR.NIGHT_MODE
-                end,
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) == COLOR_BEHAVIOR.NIGHT_MODE end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR, COLOR_BEHAVIOR.NIGHT_MODE)
                     touchmenu_instance:updateItems()
@@ -204,10 +197,8 @@ local function addOptionsIn(menu, sub_menu)
                     local screensaver_background = G_reader_settings:readSetting(NATIVE_SETTINGS.IMG_BACKGROUND)
                     return T(_("Follow wallpaper background fill (%1)"), screensaver_background)
                 end,
-                help_text = _(
-                    "White text on black when background fill is black. Black text on white when background fill is white or no fill."),
-                checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) ==
-                    COLOR_BEHAVIOR.WALLPAPER end,
+                help_text = _("White text on black when background fill is black. Black text on white when background fill is white or no fill."),
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) == COLOR_BEHAVIOR.WALLPAPER end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR, COLOR_BEHAVIOR.WALLPAPER)
                     touchmenu_instance:updateItems()
@@ -254,13 +245,11 @@ local function addOptionsIn(menu, sub_menu)
             end
         end,
         help_text = _("This option is only available if you have selected 'Show random image from folder'"),
-        enabled_func = function() return G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE) ==
-            "random_image" end,
+        enabled_func = function() return G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE) == "random_image" end,
         sub_item_table = {
             {
                 text = _("Always"),
-                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ==
-                    INTERVAL_UNITS.ALWAYS end,
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) == INTERVAL_UNITS.ALWAYS end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.CHANGE_WALLPAPER_UNITS, INTERVAL_UNITS.ALWAYS)
                     touchmenu_instance:updateItems()
@@ -269,8 +258,7 @@ local function addOptionsIn(menu, sub_menu)
             },
             {
                 text = _("After n minutes"),
-                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ==
-                    INTERVAL_UNITS.MINUTE end,
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) == INTERVAL_UNITS.MINUTE end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.CHANGE_WALLPAPER_UNITS, INTERVAL_UNITS.MINUTE)
                     touchmenu_instance:updateItems()
@@ -279,8 +267,7 @@ local function addOptionsIn(menu, sub_menu)
             },
             {
                 text = _("After n hours"),
-                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ==
-                    INTERVAL_UNITS.HOUR end,
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) == INTERVAL_UNITS.HOUR end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.CHANGE_WALLPAPER_UNITS, INTERVAL_UNITS.HOUR)
                     touchmenu_instance:updateItems()
@@ -289,8 +276,7 @@ local function addOptionsIn(menu, sub_menu)
             },
             {
                 text = _("After n days"),
-                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ==
-                    INTERVAL_UNITS.DAY end,
+                checked_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) == INTERVAL_UNITS.DAY end,
                 callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(SETTINGS.CHANGE_WALLPAPER_UNITS, INTERVAL_UNITS.DAY)
                     touchmenu_instance:updateItems()
@@ -299,11 +285,9 @@ local function addOptionsIn(menu, sub_menu)
                 separator = true,
             },
             {
-                text_func = function() return T(_("Number of units: %1"),
-                        G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_NUM)) end,
+                text_func = function() return T(_("Number of units: %1"), G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_NUM)) end,
                 help_text = _("Only enabled if you have selected an update interval other than 'Always'"),
-                enabled_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ~=
-                    INTERVAL_UNITS.ALWAYS end,
+                enabled_func = function() return G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS) ~= INTERVAL_UNITS.ALWAYS end,
                 callback = function(touchmenu_instance)
                     local units = G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS)
                     local num = G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_NUM)
