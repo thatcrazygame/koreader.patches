@@ -1,9 +1,11 @@
+### [How to install patches](https://koreader.rocks/user_guide/#L2-userpatches)
+
 ### [2-screensaver-presets](2-screensaver-presets.lua)
 Tested on KOReader 2025.10
 
 Adds the ability to save sleep screen settings as presets which can be activated by the Profiles plugin
 
-Plus new options under Screen 🞂 Sleep Screen  🞂
+Plus new options under Screen 🞂 Sleep Screen 🞂
 - Close all the widgets before showing the screensaver
 - Prevent the sleep screen message from overlapping the image
 - Center the image
@@ -22,3 +24,23 @@ Plus new options under Screen 🞂 Sleep Screen  🞂
   - Works the same as status bar or dictionary presets
 
 \* Credit to [sebdelsol's](https://github.com/sebdelsol/KOReader.patches) 2-screensaver-cover patch as the basis for many of these new options as well as some helper utilities.
+
+#### Example Usage
+How to set a custom sleep screen for a specific book
+- Configure your sleep screen preferences
+- Under Screen 🞂 Sleep Screen 🞂 Sleep screen presets 🞂 select "Create new preset from current settings" or long press an existing preset to update or rename it.
+- Under the Tools menu 🞂 Profiles 🞂 New
+- Enable Auto-execute
+  - on book opening
+  - if book metadata contains
+  - title
+  - current book
+  - Save
+- Edit actions
+  - Screen and lights
+  - Load screensaver preset
+  - Select your preset
+
+Default book sleep screen
+- Repeat the same steps as above, except select "always" for "on book opening"
+- You may need to set this up before specific book, author, etc. profiles. Or specific metadata triggers may always take precedence over "always". I'm not 100% sure how the order of execution is determined.
