@@ -7,6 +7,7 @@ local ffiUtil = require("ffi/util")
 local Font = require("ui/font")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerMenuOrder = require("ui/elements/filemanager_menu_order")
+local gettext = require("gettext")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -27,7 +28,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local userpatch = require("userpatch")
 local util = require("util")
-local _ = require("gettext")
 
 local logger = require("logger")
 local T = ffiUtil.template
@@ -101,6 +101,55 @@ end
 
 initDefaults()
 
+local PATCH_L10N = {
+    en = {
+        ["Close widgets before showing the screensaver"] = "Close widgets before showing the screensaver",
+        ["This option will only become available, if you have selected 'No fill'."] = "This option will only become available, if you have selected 'No fill'.",
+        ["Message do not overlap image"] = "Message do not overlap image",
+        ["This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."] = "This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'.",
+        ["Center image"] = "Center image",
+        ["This option will only become available, if you have selected 'Message do not overlap image'."] = "This option will only become available, if you have selected 'Message do not overlap image'.",
+        ["Sleep screen presets"] = "Sleep screen presets",
+        ["Container, position, and color"] = "Container, position, and color",
+        ["Color"] = "Color",
+        ["Follow night mode"] = "Follow night mode",
+        ["White text on black when night mode is on. Black text on white when off."] = "White text on black when night mode is on. Black text on white when off.",
+        ["Follow wallpaper background fill"] = "Follow wallpaper background fill",
+        ["White text on black when background fill is black. Black text on white when background fill is white or no fill."] = "White text on black when background fill is black. Black text on white when background fill is white or no fill.",
+        ["Invert"] = "Invert",
+        ["After applying the colors based on night mode or the background fill, invert them."] = "After applying the colors based on night mode or the background fill, invert them.",
+        ["Show icon"] = "Show icon",
+        ["This option will only become available, if you have selected Box as the container."] = "This option will only become available, if you have selected Box as the container.",
+        ["Update Frequency"] = "Update Frequency",
+        ["This option is only available if you have selected 'Show random image from folder'"] = "This option is only available if you have selected 'Show random image from folder'",
+        ["Always"] = "Always",
+        ["After n minutes"] = "After n minutes",
+        ["After n hours"] = "After n hours",
+        ["After n days"] = "After n days",
+        ["Number of units: %1"] = "Number of units: %1",
+        ["Only enabled if you have selected an update interval other than 'Always'"] = "Only enabled if you have selected an update interval other than 'Always'",
+        ["Number of units"] = "Number of units",
+        ["minute(s)"] = "minute(s)",
+        ["hours(s)"] = "hour(s)",
+        ["days(s)"] = "day(s)",
+        ["Load screensaver preset"] = "Load screensaver preset",
+    }
+}
+
+local function l10nLookup(msg)
+    local lang = "en"
+    if G_reader_settings and G_reader_settings.readSetting then
+        lang = G_reader_settings:readSetting("language") or "en"
+    end
+    local lang_base = lang:match("^([a-z]+)") or lang
+    local map = PATCH_L10N[lang] or PATCH_L10N[lang_base] or PATCH_L10N.en or {}
+    return map[msg]
+end
+
+local function _(msg)
+    return l10nLookup(msg) or gettext(msg)
+end
+
 local function findItemFromPath(menu, ...)
     local function findSubItem(sub_items, text)
         -- logger.dbg("search item", text)
@@ -139,7 +188,7 @@ local function addOptionsIn(menu, sub_menu)
     })
     table.insert(items, {
         text = _("Message do not overlap image"),
-        help_text = _( "This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."),
+        help_text = _("This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."),
         enabled_func = function()
             local screensaver_type = G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE)
             local message_pos = G_reader_settings:readSetting(NATIVE_SETTINGS.MESSAGE_VERTICAL_POSITION)
@@ -193,10 +242,7 @@ local function addOptionsIn(menu, sub_menu)
                 radio = true,
             },
             {
-                text_func = function()
-                    local screensaver_background = G_reader_settings:readSetting(NATIVE_SETTINGS.IMG_BACKGROUND)
-                    return T(_("Follow wallpaper background fill (%1)"), screensaver_background)
-                end,
+                text_func = _("Follow wallpaper background fill"),
                 help_text = _("White text on black when background fill is black. Black text on white when background fill is white or no fill."),
                 checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) == COLOR_BEHAVIOR.WALLPAPER end,
                 callback = function(touchmenu_instance)
@@ -235,15 +281,7 @@ local function addOptionsIn(menu, sub_menu)
     local custom_images_menu = findItemFromPath(items, _("Wallpaper"), _("Custom images"))
     local images_items = custom_images_menu.sub_item_table
     table.insert(images_items, {
-        text_func = function()
-            local units = G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_UNITS)
-            local num = G_reader_settings:readSetting(SETTINGS.CHANGE_WALLPAPER_NUM)
-            if units == INTERVAL_UNITS.ALWAYS then
-                return _("Update: Always")
-            else
-                return T(_("Update: After %1 %2%3"), num, units, num ~= 1 and "s" or "")
-            end
-        end,
+        text = _("Update Frequency"),
         help_text = _("This option is only available if you have selected 'Show random image from folder'"),
         enabled_func = function() return G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE) == "random_image" end,
         sub_item_table = {
