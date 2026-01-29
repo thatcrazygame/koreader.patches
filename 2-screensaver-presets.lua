@@ -101,8 +101,8 @@ end
 
 initDefaults()
 
-local function find_item_from_path(menu, ...)
-    local function find_sub_item(sub_items, text)
+local function findItemFromPath(menu, ...)
+    local function findSubItem(sub_items, text)
         -- logger.dbg("search item", text)
         for _, item in ipairs(sub_items) do
             local item_text = item.text or (item.text_func and item.text_func())
@@ -117,13 +117,13 @@ local function find_item_from_path(menu, ...)
     for _, text in ipairs { ... } do
         sub_items = item and item.sub_item_table or menu
         if not sub_items then return end
-        item = find_sub_item(sub_items, text)
+        item = findSubItem(sub_items, text)
         if not item then return end
     end
     return item
 end
 
-local function add_options_in(menu, sub_menu)
+local function addOptionsIn(menu, sub_menu)
     local prefix = Screensaver.prefix or ""
     local items = sub_menu.sub_item_table
     items[#items].separator = true
@@ -180,7 +180,7 @@ local function add_options_in(menu, sub_menu)
         end,
     })
 
-    local message_container_menu = find_item_from_path(items, _("Sleep screen message"), _("Container and position"))
+    local message_container_menu = findItemFromPath(items, _("Sleep screen message"), _("Container and position"))
     message_container_menu.text = _("Container, position, and color")
     local container_items = message_container_menu.sub_item_table
     table.insert(container_items, {
@@ -205,7 +205,7 @@ local function add_options_in(menu, sub_menu)
                     return T(_("Follow wallpaper background fill (%1)"), screensaver_background)
                 end,
                 help_text = _(
-                "White text on black when background fill is black. Black text on white when background fill is white or no fill."),
+                    "White text on black when background fill is black. Black text on white when background fill is white or no fill."),
                 checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) ==
                     COLOR_BEHAVIOR.WALLPAPER end,
                 callback = function(touchmenu_instance)
@@ -241,7 +241,7 @@ local function add_options_in(menu, sub_menu)
         end,
     })
 
-    local custom_images_menu = find_item_from_path(items, _("Wallpaper"), _("Custom images"))
+    local custom_images_menu = findItemFromPath(items, _("Wallpaper"), _("Custom images"))
     local images_items = custom_images_menu.sub_item_table
     table.insert(images_items, {
         text_func = function()
@@ -328,16 +328,16 @@ local function add_options_in(menu, sub_menu)
     })
 end
 
-local function add_options_in_screensaver(order, menu, menu_name)
+local function addOptionsInScreensaver(order, menu, menu_name)
     local buttons = order["KOMenu:menu_buttons"]
     for i, button in ipairs(buttons) do
         if button == "setting" then
             local setting_menu = menu.tab_item_table[i]
             -- logger.info(i, setting_menu)
             if setting_menu then
-                local sub_menu = find_item_from_path(setting_menu, _("Screen"), _("Sleep screen"))
+                local sub_menu = findItemFromPath(setting_menu, _("Screen"), _("Sleep screen"))
                 if sub_menu then
-                    add_options_in(menu, sub_menu)
+                    addOptionsIn(menu, sub_menu)
                     logger.info("Add screensaver options in", menu_name, "menu")
                 end
             end
@@ -434,7 +434,7 @@ local function initPresetsAndMenus(Menu, MenuOrder)
 
     Menu.setUpdateItemTable = function(self)
         orig_Menu_setUpdateItemTable(self)
-        add_options_in_screensaver(MenuOrder, self, "reader")
+        addOptionsInScreensaver(MenuOrder, self, "reader")
     end
 end
 
