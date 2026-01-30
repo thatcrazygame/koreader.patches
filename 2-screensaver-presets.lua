@@ -242,7 +242,7 @@ local function addOptionsIn(menu, sub_menu)
                 radio = true,
             },
             {
-                text_func = _("Follow wallpaper background fill"),
+                text = _("Follow wallpaper background fill"),
                 help_text = _("White text on black when background fill is black. Black text on white when background fill is white or no fill."),
                 checked_func = function() return G_reader_settings:readSetting(SETTINGS.MESSAGE_COLOR_BEHAVIOR) == COLOR_BEHAVIOR.WALLPAPER end,
                 callback = function(touchmenu_instance)
