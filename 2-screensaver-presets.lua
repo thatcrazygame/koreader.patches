@@ -150,6 +150,12 @@ local function _(msg)
     return l10nLookup(msg) or gettext(msg)
 end
 
+local function hasFunction(object, funcName)
+    local func = object[funcName]
+    return func ~= nil and type(func) == "function"
+end
+
+
 local function findItemFromPath(menu, ...)
     local function findSubItem(sub_items, text)
         -- logger.dbg("search item", text)
@@ -419,6 +425,16 @@ local function getPresets()
     return Presets.getPresets(screensaver_config)
 end
 
+local function registerActions()
+    Dispatcher:registerAction("load_screensaver_preset", {
+        category = "string",
+        event = "LoadScreensaverPreset",
+        title = _("Load screensaver preset"),
+        args_func = getPresets,
+        screen = true,
+    })
+end
+
 local function initPresetsAndMenus(Menu, MenuOrder)
     local orig_Menu_init = Menu.init
     function Menu:init()
@@ -438,14 +454,16 @@ local function initPresetsAndMenus(Menu, MenuOrder)
         self:onDispatcherRegisterActions()
     end
 
-    function Menu:onDispatcherRegisterActions()
-        Dispatcher:registerAction("load_screensaver_preset", {
-            category = "string",
-            event = "LoadScreensaverPreset",
-            title = _("Load screensaver preset"),
-            args_func = getPresets,
-            screen = true,
-        })
+    if hasFunction(Menu, "onDispatcherRegisterActions") then
+        local orig_onDispatcherRegisterActions = Menu.onDispatcherRegisterActions
+        Menu.onDispatcherRegisterActions = function(self)
+            orig_onDispatcherRegisterActions(self)
+            registerActions()
+        end
+    else
+        Menu.onDispatcherRegisterActions = function(self)
+            registerActions()
+        end
     end
 
     function Menu:onLoadScreensaverPreset(preset_name)
