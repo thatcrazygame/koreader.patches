@@ -49,6 +49,7 @@ local NATIVE_SETTINGS = {
     MESSAGE = "screensaver_message",
     SCREENSAVER_TYPE = "screensaver_type",
     IMG_BACKGROUND = "screensaver_img_background",
+    DOCUMENT_COVER = "screensaver_document_cover",
     RAND_IMG_DIR = "screensaver_dir",
     CYCLE_IMAGES = "screensaver_cycle_images_alphabetically",
     MSG_BACKGROUND = "screensaver_msg_background",
