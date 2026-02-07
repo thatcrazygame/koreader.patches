@@ -79,6 +79,14 @@ local SETTINGS = {
     MESSAGE_COLOR_BEHAVIOR = "screensaver_message_color_behavior",
     CHANGE_WALLPAPER_UNITS = "screensaver_change_wallpaper_units",
     CHANGE_WALLPAPER_NUM = "screensaver_change_wallpaper_num",
+    -- Support 21-screensaver-blur.lua
+    BLUR_SCREEN = "screensaver_blur_screen",
+    BLUR_SCREEN_STRENGTH = "screensaver_blur_screen_strength",
+    BLUR_SCREEN_QUALITY = "screensaver_blur_screen_quality",
+    BLUR_COVER = "screensaver_blur_cover",
+    BLUR_COVER_STRENGTH = "screensaver_blur_cover_strength",
+    BLUR_COVER_QUALITY = "screensaver_blur_cover_quality",
+    FORCE_BLUR = "screensaver_force_blur",
 }
 
 local DEFAULTS = {
@@ -94,7 +102,7 @@ local DEFAULTS = {
 
 local function initDefaults()
     for key, setting in pairs(SETTINGS) do
-        if G_reader_settings:hasNot(setting) then
+        if G_reader_settings:hasNot(setting) and DEFAULTS[key] ~= nil then
             G_reader_settings:saveSetting(setting, DEFAULTS[key])
         end
     end
@@ -159,11 +167,9 @@ end
 
 local function findItemFromPath(menu, ...)
     local function findSubItem(sub_items, text)
-        -- logger.dbg("search item", text)
         for _, item in ipairs(sub_items) do
             local item_text = item.text or (item.text_func and item.text_func())
             if item_text and item_text == text then
-                -- logger.dbg("Found item", item_text)
                 return item
             end
         end
@@ -362,7 +368,6 @@ local function addOptionsInScreensaver(order, menu, menu_name)
     for i, button in ipairs(buttons) do
         if button == "setting" then
             local setting_menu = menu.tab_item_table[i]
-            -- logger.info(i, setting_menu)
             if setting_menu then
                 local sub_menu = findItemFromPath(setting_menu, _("Screen"), _("Sleep screen"))
                 if sub_menu then
@@ -521,6 +526,38 @@ local function _getRandomImage(dir)
 end
 
 userpatch.replaceUpValue(Screensaver.setup, up_value_idx, _getRandomImage)
+
+
+local orig_ScreensaverSetup = Screensaver.setup
+
+Screensaver.setup = function(self, event, event_message)
+    orig_ScreensaverSetup(self, event, event_message)
+    
+    if (self.screensaver_background == "none" and self:modeIsImage()) or self.screensaver_type == "disable" then
+        if G_reader_settings:readSetting("screensaver_close_widgets_when_no_fill") then
+            -- clear highlight
+            local readerui = ReaderUI.instance
+            if readerui and readerui.highlight then readerui.highlight:clear(readerui.highlight:getClearId()) end
+
+            local added = {}
+            local widgets = {}
+            for widget in UIManager:topdown_widgets_iter() do -- populate bottom up with unique widgets (eg. keyboard appears several times)
+                if not added[widget] then
+                    table.insert(widgets, widget)
+                    added[widget] = true
+                end
+            end
+            table.remove(widgets) -- remove the main widget @ the end of the stack, we don't want to close it
+            if #widgets >= 1 then -- close all the remaining ones and repaint
+                for _, widget in ipairs(widgets) do
+                    UIManager:close(widget, "fast")
+                end
+                UIManager:forceRePaint()
+            end
+        end
+    end
+end
+
 
 local addOverlayMessage = userpatch.getUpValue(Screensaver.show, "addOverlayMessage")
 
@@ -740,8 +777,8 @@ Screensaver.show = function(self)
             if widget then -- We have a Screensaver widget
                 -- Show message_widget depending on overlap_message and center_image
                 local overlap_message = not self:modeIsImage() or
-                    G_reader_settings:readSetting("screensaver_overlap_message") or
-                    not (vertical_percentage == 100 or vertical_percentage == 0)
+                                        G_reader_settings:readSetting("screensaver_overlap_message") or
+                                        not (vertical_percentage == 100 or vertical_percentage == 0)
                 local group_settings
                 local group_type
 
@@ -781,30 +818,6 @@ Screensaver.show = function(self)
             else
                 -- No previously created widget, so just show message widget
                 widget = message_widget
-            end
-        end
-    end
-
-    if self.screensaver_background == "none" and self:modeIsImage() then
-        if G_reader_settings:readSetting("screensaver_close_widgets_when_no_fill") then
-            -- clear highlight
-            local readerui = ReaderUI.instance
-            if readerui and readerui.highlight then readerui.highlight:clear(readerui.highlight:getClearId()) end
-
-            local added = {}
-            local widgets = {}
-            for widget in UIManager:topdown_widgets_iter() do -- populate bottom up with unique widgets (eg. keyboard appears several times)
-                if not added[widget] then
-                    table.insert(widgets, widget)
-                    added[widget] = true
-                end
-            end
-            table.remove(widgets) -- remove the main widget @ the end of the stack, we don't want to close it
-            if #widgets >= 1 then -- close all the remaining ones and repaint
-                for _, widget in ipairs(widgets) do
-                    UIManager:close(widget, "fast")
-                end
-                UIManager:forceRePaint()
             end
         end
     end

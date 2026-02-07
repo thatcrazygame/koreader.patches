@@ -54,3 +54,16 @@ In the future may add new events to trigger profile auto-execute.
   - Use case: Set to last file when opening a book and set to file browser when opening the file browser. This way, you always return where you last were after a restart instead of automatically opening the last file even if you were finished with it.
 #### New Auto-execute Events
 - None
+
+### [29-screensaver-blur](29-screensaver-blur.lua)
+Blur the screen behind the sleep screen widget or blur the book cover.
+
+Screen ▶ Sleep Screen ▶ Blur ▶
+- Blur screen
+- Blur cover
+
+Each has strength and quality settings. Higher strength or quality will take longer to apply before going to sleep.
+
+I would not recommend quality above 7. You get diminishing returns and it takes forever (at least on my old Kindle Oasis). But I kept the max higher in case a newer device could take advantage
+
+Applying blur to both screen and cover will also take longer.
