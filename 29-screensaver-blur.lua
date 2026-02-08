@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerMenuOrder = require("ui/elements/filemanager_menu_order")
@@ -6,7 +7,10 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local gettext = require("gettext")
 local ImageWidget = require("ui/widget/imagewidget")
+local lfs = require("libs/libkoreader-lfs")
+local md5 = require("ffi/MD5")
 local mupdf = require("ffi/mupdf")
+local ffiUtil = require("ffi/util")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderMenu = require("apps/reader/modules/readermenu")
 local ReaderMenuOrder = require("ui/elements/reader_menu_order")
@@ -15,6 +19,9 @@ local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local Screen = Device.screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local util = require("util")
+
+local T = ffiUtil.template
 
 local logger = require("logger")
 
@@ -75,6 +82,18 @@ local PATCH_L10N = {
         ["Adjust the strength of the blur effect. A higher strength will take longer to apply and then sleep."] = "Adjust the strength of the blur effect. A higher strength will take longer to apply and then sleep.",
         ["Quality"] = "Quality",
         ["Adjust the visual quality of the blur effect. A higher quality will take longer to apply and then sleep."] = "Adjust the visual quality of the blur effect. A higher quality will take longer to apply and then sleep.",
+        ["Save"] = "Save",
+        ["Cache size: %.2f MB"] = "Cache size: %.2f MB",
+        ["Empty cache"] = "Empty cache",
+        ["Are you sure that you want to delete the blur cache?"] = "Are you sure that you want to delete the blur cache?",
+        ["Cache emptied."] = "Cache emptied.",
+        ["Delete cache: "] = "Delete cache: ",
+        ["screen blur only"] = "screen blur only",
+        ["Screen blur cache deleted"] = "Screen blur cache deleted",
+        ["this book only"] = "this book only",
+        ["Are you sure that you want to delete this book's blur cover?"] = "Are you sure that you want to delete this book's blur cover?",
+        ["Delete blur cover"] = "Delete blur cover",
+        ["Blur cover deleted."] = "Blur cover deleted.",
     }
 }
 
@@ -92,6 +111,75 @@ end
 
 local function _(msg)
     return l10nLookup(msg) or gettext(msg)
+end
+
+
+-- ================================================================
+-- UTILS
+-- ================================================================
+
+local function round(num) 
+    -- assumes positive numbers
+    return math.floor(num + 0.5)
+end
+
+
+function getFolderSize(dir)
+    local size = 0
+    for file in lfs.dir(dir) do
+        if file ~= "." and file ~= ".." then
+            local path = dir .. "/" .. file
+            local attr = lfs.attributes(path)
+            if attr.mode == "directory" then
+                size = size + getFolderSize(path) -- Recursive call for subfolders
+            else
+                size = size + attr.size
+            end
+        end
+    end
+    return size
+end
+
+
+local function getBlurProperties(strength_setting, quality_setting)
+    local strength = G_reader_settings:readSetting(strength_setting)
+    local quality = MAX_QUALITY - G_reader_settings:readSetting(quality_setting) + 1
+    local kernel_size = (4 * strength) + 1
+
+    return strength, quality, kernel_size
+end
+
+
+local function getBlurCacheDir()
+    local blur_cache_dir = DataStorage:getDataDir() .. "/patches/blurcache"
+    if not util.directoryExists(blur_cache_dir) then
+        util.makePath(blur_cache_dir)
+    end
+    return blur_cache_dir
+end
+
+
+local function getBlurFilePath(basename, strength, quality)
+    local blur_cache = getBlurCacheDir()
+    return T("%1/%2_blur_S-%3_Q-%4.png", blur_cache, basename, strength, quality)
+end
+
+
+local function cleanUpCache(starts_with, cache_file)
+    local blur_cache = getBlurCacheDir()
+    util.findFiles(blur_cache, function(file)
+        if util.stringStartsWith(ffiUtil.basename(file), starts_with) and file ~= cache_file then
+            util.removeFile(file)
+        end
+    end, false, nil)
+end
+
+
+local function deleteCache()
+    util.findFiles(getBlurCacheDir(), function(file)
+        util.removeFile(file)
+    end, false, nil)
+    util.removePath(getBlurCacheDir())
 end
 
 
@@ -164,12 +252,12 @@ end
 
 local function addOptionsIn(menu, sub_menu)
     local items = sub_menu.sub_item_table
-    local no_show, menu_pos = findItemFromPath(items, _("Do not show this book cover on sleep screen"))
+    local m, no_menu_pos = findItemFromPath(items, _("Do not show this book cover on sleep screen"))
+    local m, msg_menu_pos = findItemFromPath(items, _("Sleep screen message"))
+    local menu_idx = (no_menu_pos or msg_menu_pos or #items) + 1
 
-    logger.dbg("Sleep screen sub items", no_show, menu_pos)
-    
     items[#items].separator = true
-    table.insert(items, (menu_pos or 0) + 1, {
+    table.insert(items, menu_idx, {
         text = _("Blur"),
         help_text = _("Blur the screen before showing any sleep screen covers or widgets"),
         sub_item_table = {
@@ -233,10 +321,63 @@ local function addOptionsIn(menu, sub_menu)
                 SETTINGS.BLUR_COVER_QUALITY, DEFAULTS.BLUR_COVER_QUALITY,
                 MIN_QUALITY, MAX_QUALITY,
                 STEP, HOLD_STEP,
-                false, enableCoverBlur
+                true, enableCoverBlur
             ),
+            {
+                text_func = function()
+                    local cache_size = getFolderSize(getBlurCacheDir())  / (1024 * 1024)
+                    return string.format(_("Cache size: %.2f MB"), cache_size)
+                end
+            },
+            {
+                text = _("Empty cache"),
+                keep_menu_open = false,
+                callback = function(touchmenu_instance)
+                    local ConfirmBox = require("ui/widget/confirmbox")
+                    UIManager:show(ConfirmBox:new {
+                        text = _("Are you sure that you want to delete the blur cache?"),
+                        ok_text = _("Empty cache"),
+                        ok_callback = function()
+                            deleteCache()
+                            local InfoMessage = require("ui/widget/infomessage")
+                            UIManager:show(InfoMessage:new { text = _("Cache emptied.") })
+                            touchmenu_instance:updateItems()
+                        end
+                    })
+                    touchmenu_instance:updateItems()
+                end,
+            },
+            {
+                text = _("Delete cache: ") .. _("screen blur only"),
+                callback = function(touchmenu_instance)
+                    cleanUpCache("screen_", nil)
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new { text = _("Screen blur cache deleted") })
+                    touchmenu_instance:updateItems()
+                end,
+            }
         }
     })
+
+    if menu.name == "readermenu" then
+        table.insert(items[menu_idx].sub_item_table, {
+            text = _("Delete cache: ") .. _("this book only"),
+            callback = function()
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new {
+                    text = _("Are you sure that you want to delete this book's blur cover?"),
+                    ok_text = _("Delete blur cover"),
+                    ok_callback = function()
+                        local lastfile = G_reader_settings:readSetting("lastfile")
+                        local basename = util.splitFileNameSuffix(ffiUtil.basename(lastfile))
+                        cleanUpCache(basename, nil)
+                        local InfoMessage = require("ui/widget/infomessage")
+                        UIManager:show(InfoMessage:new { text = _("Blur cover deleted.") })
+                    end
+                })
+            end,
+        })
+    end
 end
 
 
@@ -269,25 +410,6 @@ end
 
 initMenus(ReaderMenu, ReaderMenuOrder)
 initMenus(FileManagerMenu, FileManagerMenuOrder)
-
-
--- ================================================================
--- UTILS
--- ================================================================
-
-local function round(num) 
-    -- assumes positive numbers
-    return math.floor(num + 0.5)
-end
-
-
-local function getBlurProperties(strength_setting, quality_setting)
-    local strength = G_reader_settings:readSetting(strength_setting)
-    local quality = MAX_QUALITY - G_reader_settings:readSetting(quality_setting) + 1
-    local kernel_size = (4 * strength) + 1
-
-    return strength, quality, kernel_size
-end
 
 
 -- ================================================================
@@ -404,9 +526,28 @@ local function createBlurWidget()
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
     local screenshot = Screen.bb:copy()
     local screenshot_rotation = screenshot:getRotation()
-    -- scaling back up handled by ImageWidget
-    screenshot = mupdf.scaleBlitBuffer(screenshot, round(screen_w / quality), round(screen_h / quality))
-    screenshot = gaussianBlur(screenshot, strength, kernel_size)
+    
+    local blur_cache = getBlurCacheDir()
+    local pre_blur_cache_file = getBlurFilePath("screen_pre", strength, quality)
+    local blur_cache_file = blur_cache .. "/screen_blur.png"
+    
+    cleanUpCache("screen_pre_blur", pre_blur_cache_file)
+    
+    local cache_md5sum
+    if util.pathExists(pre_blur_cache_file) then
+        cache_md5sum = md5.sumFile(pre_blur_cache_file)
+    end
+
+    screenshot:writePNG(pre_blur_cache_file)
+
+    if cache_md5sum == md5.sumFile(pre_blur_cache_file) and util.pathExists(blur_cache_file) then
+        screenshot = mupdf.renderImageFile(blur_cache_file, nil, nil)
+    else
+        screenshot = mupdf.scaleBlitBuffer(screenshot, round(screen_w / quality), round(screen_h / quality))
+        -- scaling back up handled by ImageWidget
+        screenshot = gaussianBlur(screenshot, strength, kernel_size)
+        screenshot:writePNG(blur_cache_file)
+    end
     
     local blur_widget = ImageWidget:new{
         name = "BlurWidget",
@@ -471,9 +612,23 @@ function Screensaver:setup(event, event_message)
     orig_screesaver_setup(self, event, event_message)
     if self.image and do_blur_cover(self) then
         local strength, quality, kernel_size = getBlurProperties(SETTINGS.BLUR_COVER_STRENGTH, SETTINGS.BLUR_COVER_QUALITY)
-        local blur_cover = self.image:copy()
-        blur_cover = mupdf.scaleBlitBuffer(blur_cover, round(self.image:getWidth() / quality), round(self.image:getHeight() / quality))
-        blur_cover = gaussianBlur(blur_cover, strength, kernel_size)
+        
+        local lastfile = G_reader_settings:readSetting("lastfile")
+        local basename = util.splitFileNameSuffix(ffiUtil.basename(lastfile))
+        local blur_cache_file = getBlurFilePath(basename, strength, quality)
+
+        cleanUpCache(basename, blur_cache_file)
+        
+        local blur_cover
+        if util.pathExists(blur_cache_file) then
+            blur_cover = mupdf.renderImageFile(blur_cache_file, nil, nil)
+        else
+            blur_cover = self.image:copy()
+            blur_cover = mupdf.scaleBlitBuffer(blur_cover, round(self.image:getWidth() / quality), round(self.image:getHeight() / quality))
+            blur_cover = gaussianBlur(blur_cover, strength, kernel_size)
+            blur_cover:writePNG(blur_cache_file)
+        end
+        
         self.image = blur_cover
     end
 end
