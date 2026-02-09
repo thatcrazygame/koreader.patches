@@ -61,9 +61,10 @@ Blur the screen behind the sleep screen widget or blur the book cover.
 Screen ▷ Sleep Screen ▷ Blur ▷
 - Blur screen
 - Blur cover
+- Cache management options
 
-Each has strength and quality settings. Higher strength or quality will take longer to apply before going to sleep.
+Each blur type has strength and quality settings. Higher strength or quality will take longer to apply before going to sleep.
 
 I would not recommend quality above 7. You get diminishing returns and it takes forever (at least on my old Kindle Oasis). But I kept the max higher in case a newer device could take advantage
 
-Applying blur to both screen and cover will also take longer.
+Blurred book covers are cached. They are regeneraated if the quality or strength settings are changed. The screen blur is cached too, but this is less helpful since the screen changes all the time.
