@@ -442,9 +442,17 @@ end
 local function blur1D(in_bb, kernel)
     local height = in_bb:getHeight()
     local width = in_bb:getWidth()
-    local out_bb = in_bb:copy()
-    local is_rgb = out_bb:isRGB()
-    local has_alpha = out_bb:getType() == Blitbuffer.TYPE_BB8A or out_bb:getType() == Blitbuffer.TYPE_BBRGB32
+    local is_rgb = in_bb:isRGB() and Device:hasColorScreen()
+    local has_alpha = in_bb:getType() == Blitbuffer.TYPE_BB8A or in_bb:getType() == Blitbuffer.TYPE_BBRGB32
+    
+    local out_type = Blitbuffer.TYPE_BB8
+    local stride = width
+    local pixel_stride = width
+    if is_rgb then
+        out_type = Blitbuffer.TYPE_BBRGB24
+        stride = width * 3
+    end
+    local out_bb = Blitbuffer.new(width, height, out_type, nil, stride, pixel_stride)
     
     for y = 0, height - 1 do
         for x = 0, width - 1 do
@@ -465,11 +473,11 @@ local function blur1D(in_bb, kernel)
                     val.g = val.g + (pix:getG() * weight)
                     val.b = val.b + (pix:getB() * weight)
                 else
-                    val.a = val.a + (pix.a * weight)
+                    val.a = val.a + (pix:getColor8().a * weight)
                 end
-                if has_alpha then
-                    val.alpha = val.alpha + (pix:getAlpha() * weight)
-                end
+                -- if has_alpha then
+                --     val.alpha = val.alpha + (pix:getAlpha() * weight)
+                -- end
             end
 
             for key, v in pairs(val) do
@@ -547,6 +555,7 @@ local function createBlurWidget()
         -- scaling back up handled by ImageWidget
         screenshot = gaussianBlur(screenshot, strength, kernel_size)
         screenshot:writePNG(blur_cache_file)
+        screenshot = mupdf.renderImageFile(blur_cache_file, nil, nil)
     end
     
     local blur_widget = ImageWidget:new{
@@ -627,6 +636,8 @@ function Screensaver:setup(event, event_message)
             blur_cover = mupdf.scaleBlitBuffer(blur_cover, round(self.image:getWidth() / quality), round(self.image:getHeight() / quality))
             blur_cover = gaussianBlur(blur_cover, strength, kernel_size)
             blur_cover:writePNG(blur_cache_file)
+            -- just reopening the file seems to be the easiest way to handle rotation
+            blur_cover = mupdf.renderImageFile(blur_cache_file, nil, nil)
         end
         
         self.image = blur_cover
