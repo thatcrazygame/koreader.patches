@@ -5,7 +5,10 @@ Tested on KOReader 2025.10
 ### [2-screensaver-presets](2-screensaver-presets.lua)
 Adds the ability to save sleep screen settings as presets which can be activated by the Profiles plugin
 
-Plus new options under Screen ▷ Sleep Screen ▷
+<details>
+  <summary>More Info</summary>
+
+#### New options under Screen ▷ Sleep Screen ▷
 - Close all the widgets before showing the screensaver
 - Prevent the sleep screen message from overlapping the image
 - Center the image
@@ -24,9 +27,12 @@ Plus new options under Screen ▷ Sleep Screen ▷
   - Works the same as status bar or dictionary presets
 
 \* Credit to [sebdelsol's](https://github.com/sebdelsol/KOReader.patches) 2-screensaver-cover patch as the basis for many of these new options as well as some helper utilities.
+</details>
 
-#### Example Usage
-How to set a custom sleep screen for a specific book
+<details>
+  <summary>Example Usage</summary>
+
+#### How to set a custom sleep screen for a specific book
 - Configure your sleep screen preferences
 - Under Screen ▷ Sleep Screen ▷ Sleep screen presets ▷ select "Create new preset from current settings" or long press an existing preset to update or rename it.
 - Under the Tools menu ▷ Profiles ▷ New
@@ -44,19 +50,28 @@ How to set a custom sleep screen for a specific book
 Default book sleep screen
 - Repeat the same steps as above, except select "always" for "on book opening"
 - You may need to set this up before specific book, author, etc. profiles. Or specific metadata triggers may always take precedence over "always". I'm not 100% sure how the order of execution is determined.
+</details>
 
 ### [2-profile-actions](2-profile-actions.lua)
 Adds new actions that can be triggered by the Profiles plugin.
 In the future may add new events to trigger profile auto-execute.
+
+<details>
+  <summary>More Info</summary>
+
 #### New Actions
 - General ▷ Set starts with location
   - Sets the start location after a restart (not wake from sleep).
   - Use case: Set to last file when opening a book and set to file browser when opening the file browser. This way, you always return where you last were after a restart instead of automatically opening the last file even if you were finished with it.
 #### New Auto-execute Events
 - None
+</details>
 
 ### [29-screensaver-blur](29-screensaver-blur.lua)
 Blur the screen behind the sleep screen widget or blur the book cover.
+
+<details>
+  <summary>More Info</summary><br />
 
 Screen ▷ Sleep Screen ▷ Blur ▷
 - Blur screen
@@ -67,4 +82,5 @@ Each blur type has strength and quality settings. Higher strength or quality wil
 
 I would not recommend quality above 7. You get diminishing returns and it takes forever (at least on my old Kindle Oasis). But I kept the max higher in case a newer device could take advantage
 
-Blurred book covers are cached. They are regeneraated if the quality or strength settings are changed. The screen blur is cached too, but this is less helpful since the screen changes all the time.
+Blurred book covers are cached. They are regenerated if the quality or strength settings are changed. The screen blur is cached too, but this is less helpful since the screen changes all the time.
+</details>
