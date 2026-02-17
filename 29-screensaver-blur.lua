@@ -443,8 +443,6 @@ local function blur1D(in_bb, kernel)
     local height = in_bb:getHeight()
     local width = in_bb:getWidth()
     local is_rgb = in_bb:isRGB() and Device:hasColorScreen()
-    local has_alpha = in_bb:getType() == Blitbuffer.TYPE_BB8A or in_bb:getType() == Blitbuffer.TYPE_BBRGB32
-    
     local out_type = Blitbuffer.TYPE_BB8
     local stride = width
     local pixel_stride = width
@@ -453,50 +451,20 @@ local function blur1D(in_bb, kernel)
         stride = width * 3
     end
     local out_bb = Blitbuffer.new(width, height, out_type, nil, stride, pixel_stride)
-    
+    local kernel_size_offset = 1 + math.floor(#kernel / 2)
     for y = 0, height - 1 do
         for x = 0, width - 1 do
-            local val = {
-                a = 0, -- greyscale value, not alpha
-                r = 0,
-                g = 0,
-                b = 0,
-                alpha = 0,
-            }
+            local color = out_bb.getMyColor(Blitbuffer.Color8(0))
             for i, weight in ipairs(kernel) do
-                local offset = i - 1 - math.floor(#kernel / 2)
+                local offset = i - kernel_size_offset
                 if x + offset < 0 or x + offset > width - 1 then offset = -1 * offset end
-                
                 local pix = in_bb:getPixel(x + offset, y)
                 if is_rgb then
-                    val.r = val.r + (pix:getR() * weight)
-                    val.g = val.g + (pix:getG() * weight)
-                    val.b = val.b + (pix:getB() * weight)
+                    color.r = color:getR() + (pix:getR() * weight)
+                    color.g = color:getG() + (pix:getG() * weight)
+                    color.b = color:getB() + (pix:getB() * weight)
                 else
-                    val.a = val.a + (pix:getColor8().a * weight)
-                end
-                -- if has_alpha then
-                --     val.alpha = val.alpha + (pix:getAlpha() * weight)
-                -- end
-            end
-
-            for key, v in pairs(val) do
-                -- by the math, it shouldn't be possible to greater than 255, but just in case
-                val[key] = math.min(round(v), 255)
-            end
-
-            local color
-            if is_rgb then
-                if has_alpha then
-                    color = Blitbuffer.ColorRGB32(val.r, val.g, val.b, val.alpha)
-                else
-                    color = Blitbuffer.ColorRGB24(val.r, val.g, val.b)    
-                end
-            else
-                if has_alpha then
-                    color = Blitbuffer.Color8A(val.a, val.alpha)
-                else
-                    color = Blitbuffer.Color8(val.a)    
+                    color.a = color.a + (pix:getColor8().a * weight)
                 end
             end
             out_bb:setPixel(x, y, color)
