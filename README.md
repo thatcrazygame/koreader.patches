@@ -70,7 +70,7 @@ In the future may add new events to trigger profile auto-execute.
 ### [29-screensaver-blur](29-screensaver-blur.lua)
 Blur the screen behind the sleep screen widget or blur the book cover.
 > [!WARNING]
-> May affect battery life
+> May affect battery life at high quality settings, 8+
 <details>
   <summary>More Info</summary><br />
 
