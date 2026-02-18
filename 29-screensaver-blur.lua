@@ -454,18 +454,31 @@ local function blur1D(in_bb, kernel)
     local kernel_size_offset = 1 + math.floor(#kernel / 2)
     for y = 0, height - 1 do
         for x = 0, width - 1 do
-            local color = out_bb.getMyColor(Blitbuffer.Color8(0))
+            -- Use this instead of a bb color because we don't want to overflow int8s
+            local val = {
+                a = 0,
+                r = 0,
+                g = 0,
+                b = 0,
+            }
             for i, weight in ipairs(kernel) do
                 local offset = i - kernel_size_offset
                 if x + offset < 0 or x + offset > width - 1 then offset = -1 * offset end
                 local pix = in_bb:getPixel(x + offset, y)
                 if is_rgb then
-                    color.r = color:getR() + (pix:getR() * weight)
-                    color.g = color:getG() + (pix:getG() * weight)
-                    color.b = color:getB() + (pix:getB() * weight)
+                    val.r = val.r + (pix:getR() * weight)
+                    val.g = val.g + (pix:getG() * weight)
+                    val.b = val.b + (pix:getB() * weight)
                 else
-                    color.a = color.a + (pix:getColor8().a * weight)
+                    val.a = val.a + (pix:getColor8().a * weight)
                 end
+            end
+            for key, v in pairs(val) do
+                val[key] = math.min(round(v), 255)
+            end
+            local color = Blitbuffer.Color8(val.a)
+            if is_rgb then
+                color = Blitbuffer.ColorRGB24(val.r, val.g, val.b)
             end
             out_bb:setPixel(x, y, color)
         end
