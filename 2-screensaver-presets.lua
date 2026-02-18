@@ -79,7 +79,7 @@ local SETTINGS = {
     MESSAGE_COLOR_BEHAVIOR = "screensaver_message_color_behavior",
     CHANGE_WALLPAPER_UNITS = "screensaver_change_wallpaper_units",
     CHANGE_WALLPAPER_NUM = "screensaver_change_wallpaper_num",
-    -- Support 21-screensaver-blur.lua
+    -- Support screensaver-blur patch
     BLUR_SCREEN = "screensaver_blur_screen",
     BLUR_SCREEN_STRENGTH = "screensaver_blur_screen_strength",
     BLUR_SCREEN_QUALITY = "screensaver_blur_screen_quality",
@@ -111,39 +111,15 @@ end
 initDefaults()
 
 local PATCH_L10N = {
-    en = {
-        ["Close widgets before showing the screensaver"] = "Close widgets before showing the screensaver",
-        ["This option will only become available, if you have selected 'No fill'."] = "This option will only become available, if you have selected 'No fill'.",
-        ["Message do not overlap image"] = "Message do not overlap image",
-        ["This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'."] = "This option will only become available, if you have selected a cover or a random image and you have a message and the message position is 'top' or 'bottom'.",
-        ["Center image"] = "Center image",
-        ["This option will only become available, if you have selected 'Message do not overlap image'."] = "This option will only become available, if you have selected 'Message do not overlap image'.",
-        ["Sleep screen presets"] = "Sleep screen presets",
-        ["Container, position, and color"] = "Container, position, and color",
-        ["Color"] = "Color",
-        ["Follow night mode"] = "Follow night mode",
-        ["White text on black when night mode is on. Black text on white when off."] = "White text on black when night mode is on. Black text on white when off.",
-        ["Follow wallpaper background fill"] = "Follow wallpaper background fill",
-        ["White text on black when background fill is black. Black text on white when background fill is white or no fill."] = "White text on black when background fill is black. Black text on white when background fill is white or no fill.",
-        ["Invert"] = "Invert",
-        ["After applying the colors based on night mode or the background fill, invert them."] = "After applying the colors based on night mode or the background fill, invert them.",
-        ["Show icon"] = "Show icon",
-        ["This option will only become available, if you have selected Box as the container."] = "This option will only become available, if you have selected Box as the container.",
-        ["Update Frequency"] = "Update Frequency",
-        ["This option is only available if you have selected 'Show random image from folder'"] = "This option is only available if you have selected 'Show random image from folder'",
-        ["Always"] = "Always",
-        ["After n minutes"] = "After n minutes",
-        ["After n hours"] = "After n hours",
-        ["After n days"] = "After n days",
-        ["Number of units: %1"] = "Number of units: %1",
-        ["Only enabled if you have selected an update interval other than 'Always'"] = "Only enabled if you have selected an update interval other than 'Always'",
-        ["Number of units"] = "Number of units",
-        ["minute(s)"] = "minute(s)",
-        ["hours(s)"] = "hour(s)",
-        ["days(s)"] = "day(s)",
-        ["Load screensaver preset"] = "Load screensaver preset",
-    }
+    --[[
+        Put localizations inside this table
+        i.e. 
+        es = {
+            ["minute(s)"] = "minuto(s)",
+        }
+    ]]--
 }
+
 
 local function l10nLookup(msg)
     local lang = "en"

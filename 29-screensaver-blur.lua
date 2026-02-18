@@ -71,30 +71,13 @@ initDefaults()
 -- ================================================================
 
 local PATCH_L10N = {
-    en = {
-        ["Blur screen"] = "Blur screen",
-        ["Blur cover"] = "Blur cover",
-        ["Blur the screen before showing any sleep screen covers or widgets"] = "Blur the screen before showing any sleep screen covers or widgets",
-        ["Enable blur"] = "Enable blur",
-        ["Force blur"] = "Force blur",
-        ["Enable blur even if sleep screen may be covering entire screen"] = "Enable blur even if sleep screen may be covering entire screen",
-        ["Strength"] = "Strength",
-        ["Adjust the strength of the blur effect. A higher strength will take longer to apply and then sleep."] = "Adjust the strength of the blur effect. A higher strength will take longer to apply and then sleep.",
-        ["Quality"] = "Quality",
-        ["Adjust the visual quality of the blur effect. A higher quality will take longer to apply and then sleep."] = "Adjust the visual quality of the blur effect. A higher quality will take longer to apply and then sleep.",
-        ["Save"] = "Save",
-        ["Cache size: %.2f MB"] = "Cache size: %.2f MB",
-        ["Empty cache"] = "Empty cache",
-        ["Are you sure that you want to delete the blur cache?"] = "Are you sure that you want to delete the blur cache?",
-        ["Cache emptied."] = "Cache emptied.",
-        ["Delete cache: "] = "Delete cache: ",
-        ["screen blur only"] = "screen blur only",
-        ["Screen blur cache deleted"] = "Screen blur cache deleted",
-        ["this book only"] = "this book only",
-        ["Are you sure that you want to delete this book's blur cover?"] = "Are you sure that you want to delete this book's blur cover?",
-        ["Delete blur cover"] = "Delete blur cover",
-        ["Blur cover deleted."] = "Blur cover deleted.",
-    }
+    --[[
+        Put localizations inside this table
+        i.e. 
+        es = {
+            ["Strength"] = "Fortaleza",
+        }
+    ]]--
 }
 
 
