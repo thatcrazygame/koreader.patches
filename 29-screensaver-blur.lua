@@ -557,17 +557,10 @@ end
 -- SCREENSAVER OVERRIDES
 -- ================================================================
 
-function ScreenSaverWidget:update()
-    self.height = Screen:getHeight()
-    self.width = Screen:getWidth()
+local orig_screensaverwidget_init = ScreenSaverWidget.init
 
-    self.region = Geom:new{
-        x = 0, y = 0,
-        w = self.width,
-        h = self.height,
-    }
-    
-    local widget = self.widget
+function ScreenSaverWidget:init()
+    local orig_widget = self.widget
     if do_blur_screen(Screensaver) then
         local blur_widget = createBlurWidget()
         local overlap_widget = OverlapGroup:new{
@@ -576,23 +569,11 @@ function ScreenSaverWidget:update()
                 w = self.height,
             },
             blur_widget,
-            self.widget
+            orig_widget
         }
-        widget = overlap_widget
+        self.widget = overlap_widget
     end
-    
-    self.main_frame = FrameContainer:new{
-        radius = 0,
-        bordersize = 0,
-        padding = 0,
-        margin = 0,
-        background = self.background,
-        width = self.width,
-        height = self.height,
-        widget,
-    }
-    self.dithered = true
-    self[1] = self.main_frame
+    orig_screensaverwidget_init(self)
 end
 
 
