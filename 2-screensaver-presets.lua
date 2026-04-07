@@ -168,8 +168,10 @@ local function addOptionsIn(menu, sub_menu)
     items[#items].separator = true
     table.insert(items, {
         text = _("Close widgets before showing the screensaver"),
-        help_text = _("This option will only become available, if you have selected 'No fill'."),
-        enabled_func = function() return G_reader_settings:readSetting(NATIVE_SETTINGS.IMG_BACKGROUND) == "none" end,
+        help_text = _("This option will only become available, if you have selected 'No fill' or 'Leave screen as-is'."),
+        enabled_func = function()
+            return G_reader_settings:readSetting(NATIVE_SETTINGS.IMG_BACKGROUND) == "none" or G_reader_settings:readSetting(NATIVE_SETTINGS.SCREENSAVER_TYPE) == "disable"
+        end,
         checked_func = function() return G_reader_settings:isTrue(SETTINGS.CLOSE_WIDGETS) end,
         callback = function(touchmenu_instance)
             G_reader_settings:toggle(SETTINGS.CLOSE_WIDGETS)

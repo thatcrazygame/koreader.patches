@@ -107,7 +107,7 @@ local function round(num)
 end
 
 
-function getFolderSize(dir)
+local function getFolderSize(dir)
     local size = 0
     for file in lfs.dir(dir) do
         if file ~= "." and file ~= ".." then
