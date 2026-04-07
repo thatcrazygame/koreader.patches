@@ -1,6 +1,6 @@
 ### [How to install patches](https://koreader.rocks/user_guide/#L2-userpatches)
 
-Tested on KOReader 2025.10
+Tested on KOReader 2025.10 and 2026.03
 
 ### [2-screensaver-presets](2-screensaver-presets.lua)
 Adds the ability to save sleep screen settings as presets which can be activated by the Profiles plugin
