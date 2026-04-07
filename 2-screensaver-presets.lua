@@ -11,6 +11,7 @@ local gettext = require("gettext")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local PluginLoader = require("pluginloader")
 local Presets = require("ui/presets")
 local RenderImage = require("ui/renderimage")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -524,9 +525,13 @@ Screensaver.setup = function(self, event, event_message)
                 end
             end
             table.remove(widgets) -- remove the main widget @ the end of the stack, we don't want to close it
+            local simpleui_enabled = PluginLoader:isPluginLoaded("simpleui")
             if #widgets >= 1 then -- close all the remaining ones and repaint
                 for _, widget in ipairs(widgets) do
-                    UIManager:close(widget, "fast")
+                    local is_simpleui_home = simpleui_enabled and widget.name == "homescreen"
+                    if not is_simpleui_home then
+                        UIManager:close(widget, "fast")
+                    end
                 end
                 UIManager:forceRePaint()
             end

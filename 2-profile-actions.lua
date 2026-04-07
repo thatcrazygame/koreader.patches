@@ -6,6 +6,7 @@ local ReaderMenu = require("apps/reader/modules/readermenu")
 -- local ReaderMenuOrder = require("ui/elements/reader_menu_order")
 local userpatch = require("userpatch")
 local logger = require("logger")
+local PluginLoader = require("pluginloader")
 
 local PATCH_L10N = {
     en = {
@@ -42,6 +43,10 @@ local function getStartsWithOptions()
         { _("last file"), "last" },
     }
     
+    if PluginLoader:isPluginLoaded("simpleui") then
+        table.insert(start_withs, {_("Home Screen"), "homescreen_simpleui"})
+    end
+    
     -- could just hard code these tables, but want to be able to copy/paste the options for start_withs 
     -- or access them if they ever get moved to a non-local variable
     local start_names, start_texts = {}, {}
@@ -50,7 +55,7 @@ local function getStartsWithOptions()
         table.insert(start_names, start_name)
         table.insert(start_texts, start_text)
     end
-
+    
     return start_names, start_texts
 end
 
