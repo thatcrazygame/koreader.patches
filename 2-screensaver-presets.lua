@@ -526,12 +526,15 @@ Screensaver.setup = function(self, event, event_message)
                     added[widget] = true
                 end
             end
+            
             table.remove(widgets) -- remove the main widget @ the end of the stack, we don't want to close it
             local simpleui_enabled = PluginLoader:isPluginLoaded("simpleui")
+            local bookshelf_enabled = PluginLoader:isPluginLoaded("bookshelf")
             if #widgets >= 1 then -- close all the remaining ones and repaint
                 for _, widget in ipairs(widgets) do
                     local is_simpleui_home = simpleui_enabled and widget.name == "homescreen"
-                    if not is_simpleui_home then
+                    local is_bookshelf = bookshelf_enabled and widget.name == "bookshelf"
+                    if not is_simpleui_home and not is_bookshelf then
                         UIManager:close(widget, "fast")
                     end
                 end

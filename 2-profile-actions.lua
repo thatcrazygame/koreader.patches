@@ -44,7 +44,11 @@ local function getStartsWithOptions()
     }
     
     if PluginLoader:isPluginLoaded("simpleui") then
-        table.insert(start_withs, {_("Home Screen"), "homescreen_simpleui"})
+        table.insert(start_withs, {_("Home Screen (SimpleUI)"), "homescreen_simpleui"})
+    end
+    
+    if PluginLoader:isPluginLoaded("bookshelf") then
+        table.insert(start_withs, {_("Bookshelf"), "bookshelf"})
     end
     
     -- could just hard code these tables, but want to be able to copy/paste the options for start_withs 
