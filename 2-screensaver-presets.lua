@@ -141,6 +141,14 @@ local function hasFunction(object, funcName)
     return func ~= nil and type(func) == "function"
 end
 
+local function hasValue(tab, val)
+    for _, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
 
 local function findItemFromPath(menu, ...)
     local function findSubItem(sub_items, text)
@@ -528,13 +536,19 @@ Screensaver.setup = function(self, event, event_message)
             end
             
             table.remove(widgets) -- remove the main widget @ the end of the stack, we don't want to close it
-            local simpleui_enabled = PluginLoader:isPluginLoaded("simpleui")
             local bookshelf_enabled = PluginLoader:isPluginLoaded("bookshelf")
+            local simpleui_enabled = PluginLoader:isPluginLoaded("simpleui")
+            local zen_ui_enabled = PluginLoader:isPluginLoaded("zen_ui")
+            local zen_widgets = {
+                "authors","books","collections","favorites","history",
+                "home","manga","news","series","stats","tags","to_be_read"
+            }
             if #widgets >= 1 then -- close all the remaining ones and repaint
                 for _, widget in ipairs(widgets) do
                     local is_simpleui_home = simpleui_enabled and widget.name == "homescreen"
                     local is_bookshelf = bookshelf_enabled and widget.name == "bookshelf"
-                    if not is_simpleui_home and not is_bookshelf then
+                    local is_zen_widget = zen_ui_enabled and widget.name ~= nil and hasValue(zen_widgets, widget.name)
+                    if not is_simpleui_home and not is_bookshelf and not is_zen_widget then
                         UIManager:close(widget, "fast")
                     end
                 end
