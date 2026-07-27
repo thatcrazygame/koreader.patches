@@ -548,7 +548,7 @@ Screensaver.setup = function(self, event, event_message)
                     local is_simpleui_home = simpleui_enabled and widget.name == "homescreen"
                     local is_bookshelf = bookshelf_enabled and widget.name == "bookshelf"
                     local is_zen_widget = zen_ui_enabled and widget.name ~= nil and hasValue(zen_widgets, widget.name)
-                    if not is_simpleui_home and not is_bookshelf and not is_zen_widget then
+                    if not is_simpleui_home and not is_bookshelf and not is_zen_widget and widget.name ~= "ReaderUI" then
                         UIManager:close(widget, "fast")
                     end
                 end
