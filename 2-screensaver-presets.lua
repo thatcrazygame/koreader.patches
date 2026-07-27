@@ -61,6 +61,8 @@ local NATIVE_SETTINGS = {
     ROTATE_AUTO_FOR_BEST_FIT = "screensaver_rotate_auto_for_best_fit",
     DELAY = "screensaver_delay",
     HIDE_FALLBACK_MSG = "screensaver_hide_fallback_msg",
+    EXTRA_FLASH_DELAY = "screensaver_extra_flash_delay",
+    EXTRA_FLASH_COUNT = "screensaver_extra_flash_count",
 }
 
 local PREFIX_SETTINGS = {
@@ -644,7 +646,7 @@ Screensaver.show = function(self)
                 widget_settings.file_do_cache = false
             end
             widget_settings.alpha = true
-        end                                               -- set cover or file
+        end -- set cover or file
         if G_reader_settings:isTrue("screensaver_rotate_auto_for_best_fit") then
             local angle = rotation_mode == 3 and 180 or 0 -- match mode if possible
             if (widget_settings.image:getWidth() < widget_settings.image:getHeight()) ~= (widget_settings.width < widget_settings.height) then
@@ -654,7 +656,7 @@ Screensaver.show = function(self)
         end
         widget = ImageWidget:new(widget_settings)
     elseif self.screensaver_type == "bookstatus" then
-        widget = BookStatusWidget:new {
+        widget = BookStatusWidget:new{
             ui = self.ui,
             readonly = true,
         }
@@ -751,7 +753,7 @@ Screensaver.show = function(self)
             textbox:update(true)
         elseif message_container == "banner" then
             local face = Font:getFace("infofont")
-            content_widget = TextBoxWidget:new {
+            content_widget = TextBoxWidget:new{
                 text = screensaver_message,
                 face = face,
                 width = screen_w,
@@ -761,7 +763,7 @@ Screensaver.show = function(self)
             }
         end
         -- Create a custom container that places the Message at the requested vertical coordinate.
-        message_widget = CustomPositionContainer:new {
+        message_widget = CustomPositionContainer:new{
             widget = content_widget,
             -- although the computer expects 0 to be the top, users expect 0 to be the bottom
             vertical_position = 1 - (vertical_percentage / 100),
@@ -774,7 +776,7 @@ Screensaver.show = function(self)
 
         -- Check if message_widget should be overlaid on another widget
         if message_widget then
-            if widget then -- We have a Screensaver widget
+            if widget then  -- We have a Screensaver widget
                 -- Show message_widget depending on overlap_message and center_image
                 local overlap_message = not self:modeIsImage() or
                                         G_reader_settings:readSetting("screensaver_overlap_message") or
@@ -829,8 +831,16 @@ Screensaver.show = function(self)
     -- NOTE: Make sure InputContainer gestures are not disabled, to prevent stupid interactions with UIManager on close.
     UIManager:setIgnoreTouchInput(false)
 
+    -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
+    if with_gesture_lock then
+        self.screensaver_lock_widget = ScreenSaverLockWidget:new{
+            ui = self.ui,
+            orig_dimen = orig_dimen,
+        }
+    end
+
     if widget then
-        self.screensaver_widget = ScreenSaverWidget:new {
+        self.screensaver_widget = ScreenSaverWidget:new{
             widget = widget,
             background = background,
             covers_fullscreen = covers_fullscreen,
@@ -839,17 +849,37 @@ Screensaver.show = function(self)
         self.screensaver_widget.dithered = true
 
         UIManager:show(self.screensaver_widget, "full")
-    end
-
-    -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
-    if with_gesture_lock then
-        self.screensaver_lock_widget = ScreenSaverLockWidget:new {
-            ui = self.ui,
-            orig_dimen = orig_dimen,
-        }
-
-        -- It's flagged as modal, so it'll stay on top
-        UIManager:show(self.screensaver_lock_widget)
+        local extra_flash_count = G_reader_settings:readSetting("screensaver_extra_flash_count", 0)
+        if extra_flash_count > 0 then
+            local screen_w2, screen_h2 = Screen:getWidth(), Screen:getHeight()
+            local delay_ms = G_reader_settings:readSetting("screensaver_extra_flash_delay", 1000)
+            Device.screensaver_suspend_wait_timeout = Device:getScreensaverSuspendWaitTimeout(extra_flash_count, delay_ms)
+            for i = 1, extra_flash_count do
+                local t = 0.5 + (i - 1) * (delay_ms / 1000)
+                local is_last = (i == extra_flash_count)
+                UIManager:scheduleIn(t, function()
+                    -- Paint black directly to the framebuffer and refresh, then force a full widget redraw.
+                    Screen.bb:fill(Blitbuffer.COLOR_BLACK)
+                    Screen:refreshFull(0, 0, screen_w2, screen_h2)
+                    UIManager:scheduleIn(0.5, function()
+                        UIManager:setDirty(self.screensaver_widget, "full")
+                        UIManager:forceRePaint()
+                        if is_last then
+                            -- It's flagged as modal, so it'll stay on top
+                            UIManager:show(self.screensaver_lock_widget)
+                        end
+                    end)
+                end)
+            end
+        else
+            -- It's flagged as modal, so it'll stay on top
+            UIManager:show(self.screensaver_lock_widget)
+        end
+    else
+        -- No screensaver widget, show lock widget immediately if needed
+        if self.screensaver_lock_widget then
+            UIManager:show(self.screensaver_lock_widget)
+        end
     end
 end
 
